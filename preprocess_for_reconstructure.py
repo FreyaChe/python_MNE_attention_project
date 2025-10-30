@@ -135,13 +135,21 @@ mne.write_trans(filename, coreg.trans, overwrite=True)
 
 # In[4] forward (need raw file) 
 src = mne.read_source_spaces('/Users/freya/Study/self-learning/python/MEG_example/average-src.fif')  
+fwddir = '/Volumes/Freya/PhD_data/attention_MEG/python_fwd_data/'
 
-subj_ID = '40'
+subj_ID = '39'
 folder = Path(raw_dir)
 name_idx = '*_'+subj_ID+'_*_ds2.fif'
 # get the raw data according to the subject ID
 sample_data_raw_file = next(folder.rglob(name_idx), None)
 print(sample_data_raw_file)
+
+
+filename = '*'+subj_ID+'-trans.fif' # get forward data
+folder = Path(fwddir)
+transdata = next(folder.rglob(filename), None)
+print(transdata)
+trans = mne.read_trans(transdata)
 
 ''' forward solution'''
 conductivity = (0.3,)  # for single layer
@@ -152,7 +160,7 @@ bem = mne.make_bem_solution(model)
 
 fwd = mne.make_forward_solution(
     sample_data_raw_file,
-    trans=coreg.trans,
+    trans=trans,
     src=src,
     bem=bem,
     meg=True,
@@ -168,7 +176,7 @@ print(f'After:  {fwd["src"]}')
 leadfield = fwd["sol"]["data"]
 print("Leadfield size : %d sensors x %d dipoles" % leadfield.shape)
 
-filename = datadir+'attention_'+subj_ID+'-fwd.fif'
+filename = fwddir+'attention_'+subj_ID+'-fwd.fif'
 mne.write_forward_solution(filename, fwd, overwrite=True)
 
 
