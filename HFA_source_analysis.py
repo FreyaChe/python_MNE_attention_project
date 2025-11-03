@@ -61,14 +61,14 @@ for sub_ID in range(31):
     stc_avg = stc.copy().crop(0.1, 0.3).mean()  # average accross 0.1~0.3s
     mean_hfa[:, sub_ID] = stc_avg.data[:, 0]  # matrix of results
 
-
-# In[2] group result
 stc.data = mean_hfa # average result
 stc.save('/Users/freya/Documents/GitHub/python_MNE_attention_project/Averaged_HFA')
 
+
+# In[2] group result
+stc = mne.read_source_estimate('/Users/freya/Documents/GitHub/python_MNE_attention_project/Averaged_HFA')
 stc_avg = stc.copy()
 # stc_avg.data = stc.copy().data.mean(axis = 1)[:,None]
-
 
 # normarlize
 norm_data = np.zeros((8196,len(name_list)))
@@ -94,7 +94,7 @@ brain = stc_avg.plot(
     show_traces=False,
     colorbar=False,
 )
-brain.add_annotation("aparc.a2009s")
+# brain.add_annotation("aparc.a2009s")
 screenshot_lat = brain.screenshot()
 brain.close()
 
@@ -110,7 +110,7 @@ brain = stc_avg.plot(
     show_traces=False,
     colorbar=False,
 )
-brain.add_annotation("aparc.a2009s")
+# brain.add_annotation("aparc.a2009s")
 screenshot_med = brain.screenshot()
 brain.close()
 
