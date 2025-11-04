@@ -14,7 +14,9 @@ from mne.minimum_norm import apply_inverse_epochs, make_inverse_operator
 from itertools import zip_longest
 # from mne.stats import permutation_t_test
 from scipy.stats import ttest_1samp
+from tqdm import tqdm
 
+# In[]
 ''' dataloading and selection'''
 data_dir = '/Volumes/Freya/PhD_data/attention_MEG/python_epoched_data/' # epoch data
 fwd_dir = '/Volumes/Freya/PhD_data/attention_MEG/python_fwd_data' # path of fwd data
@@ -97,25 +99,28 @@ for sub_ID in range(31):
     pa_ts = mne.extract_label_time_course(
         stcs_pa, [roi1, roi2], src=fwd['src'], mode="mean_flip", return_generator=False
     )
+    stcs_pa = apply_inverse_epochs(
+        epoch_data[pa_idx], inverse_operator, lambda2, method, pick_ori="normal", return_generator=True
+    )
     
     fs = 500
-    theta_b,theta_a = butter(4, [4/(fs/2),8/(fs/2)],btype ='band')
-    hfa_b,hfa_a = butter(4, [80/(fs/2),150/(fs/2)],btype ='band')
-    time = np.linspace(-1.0,1.5, int(500*2.5)+1)
-    indices = np.where((time > 0) & (time < 0.8))[0] # 0~0.6s
+    theta_b,theta_a = butter(4, [4/(fs/2),8/(fs/2)],btype ='band') # theta band
+    hfa_b,hfa_a = butter(4, [80/(fs/2),150/(fs/2)],btype ='band') # HFA band
+    time = np.linspace(-1.0,1.5, int(500*2.5)+1) # time points 
+    indices = np.where((time > 0) & (time < 0.8))[0] # PAC from 0~0.8s
     
     pac_pa = np.zeros((8196,2))
-    n = 0
-    for ts, stc in zip_longest(pa_ts, stcs_pa):
+    for ts, stc in tqdm(zip_longest(pa_ts, stcs_pa), total=len(pa_ts), desc="Processing STCs"): 
+        # theta phase
         theta_filt = filtfilt(theta_b, theta_a, stc.data)
         theta_hilbert = hilbert(theta_filt)
         theta_phase = np.angle(theta_hilbert)
         theta_phase = theta_phase[:,indices]
+        # HFA amplitude
         hfa_filt = filtfilt(hfa_b, hfa_a, ts)
         hfa_hilbert = hilbert(hfa_filt)
         hfa = np.abs(hfa_hilbert)
         hfa = hfa[:,indices]
-        n += 1
         pac_pa += compute_pac_tort(theta_phase, hfa, n_bins=18)
     
     del pa_ts, stcs_pa
@@ -129,9 +134,12 @@ for sub_ID in range(31):
     rest_ts = mne.extract_label_time_course(
         stcs_rest, [roi1, roi2], src=fwd['src'], mode="mean_flip", return_generator=False
     )
+    stcs_rest = apply_inverse_epochs(
+        epoch_data[re_idx], inverse_operator, lambda2, method, pick_ori="normal", return_generator=True
+    )
     
     pac_rest = np.zeros((8196,2))
-    for ts, stc in zip_longest(rest_ts, stcs_rest):
+    for ts, stc in tqdm(zip_longest(rest_ts, stcs_rest), total=len(rest_ts), desc="Processing STCs"):
         theta_filt = filtfilt(theta_b, theta_a, stc.data)
         theta_hilbert = hilbert(theta_filt)
         theta_phase = np.angle(theta_hilbert)
